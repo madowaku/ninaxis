@@ -4,6 +4,20 @@ const StageRepository = preload("res://src/stage_repository.gd")
 const MILESTONE_IDS := ["001", "007", "010"]
 const DIGITS := [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
+const C_BG := Color("f6f8fc")
+const C_TEXT := Color("172033")
+const C_MUTED := Color("667085")
+const C_BORDER := Color("d7deea")
+const C_LAYER_BG := Color("edf2f8")
+const C_EMPTY := Color("ffffff")
+const C_GIVEN := Color("e4e9f1")
+const C_ENTRY := Color("eef9ff")
+const C_ACCENT := Color("179bd7")
+const C_ACCENT_SOFT := Color("dff5ff")
+const C_SELECTED := Color("8edcf4")
+const C_CONFLICT := Color("ffe2e2")
+const C_CONFLICT_BORDER := Color("dc5a5a")
+
 var repo := StageRepository.new()
 var stage: Dictionary = {}
 var values: Array = []
@@ -29,7 +43,7 @@ func _ready() -> void:
 
 func _build_ui() -> void:
     var background := ColorRect.new()
-    background.color = Color("f5f7fb")
+    background.color = C_BG
     background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     background.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(background)
@@ -39,41 +53,52 @@ func _build_ui() -> void:
     margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     margin.add_theme_constant_override("margin_left", 14)
     margin.add_theme_constant_override("margin_right", 14)
-    margin.add_theme_constant_override("margin_top", 14)
-    margin.add_theme_constant_override("margin_bottom", 14)
+    margin.add_theme_constant_override("margin_top", 12)
+    margin.add_theme_constant_override("margin_bottom", 12)
     add_child(margin)
 
     var root_v := VBoxContainer.new()
-    root_v.add_theme_constant_override("separation", 8)
+    root_v.add_theme_constant_override("separation", 6)
     margin.add_child(root_v)
 
     var header := HBoxContainer.new()
     header.add_theme_constant_override("separation", 8)
     root_v.add_child(header)
 
+    var brand_box := VBoxContainer.new()
+    brand_box.add_theme_constant_override("separation", -2)
+    header.add_child(brand_box)
+
     var brand := Label.new()
     brand.text = "NINAXIS"
     brand.add_theme_font_size_override("font_size", 24)
-    brand.add_theme_color_override("font_color", Color("172033"))
-    header.add_child(brand)
+    brand.add_theme_color_override("font_color", C_TEXT)
+    brand_box.add_child(brand)
+
+    var tagline := Label.new()
+    tagline.text = "3 × 3 × 3 LOGIC"
+    tagline.add_theme_font_size_override("font_size", 10)
+    tagline.add_theme_color_override("font_color", C_MUTED)
+    brand_box.add_child(tagline)
 
     var spacer := Control.new()
     spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     header.add_child(spacer)
 
     stage_picker = OptionButton.new()
-    stage_picker.custom_minimum_size = Vector2(92, 40)
+    stage_picker.custom_minimum_size = Vector2(96, 40)
     for id in MILESTONE_IDS:
         stage_picker.add_item("Stage %s" % id)
         stage_picker.set_item_metadata(stage_picker.item_count - 1, id)
     stage_picker.item_selected.connect(_on_stage_selected)
+    _style_secondary_button(stage_picker)
     header.add_child(stage_picker)
 
     var rule := Label.new()
     rule.text = "9枚の3×3断面すべてに 1〜9 を1回ずつ"
     rule.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    rule.add_theme_font_size_override("font_size", 13)
-    rule.add_theme_color_override("font_color", Color("667085"))
+    rule.add_theme_font_size_override("font_size", 12)
+    rule.add_theme_color_override("font_color", C_MUTED)
     root_v.add_child(rule)
 
     stage_title_label = Label.new()
@@ -82,66 +107,84 @@ func _build_ui() -> void:
     stage_title_label.add_theme_color_override("font_color", Color("344054"))
     root_v.add_child(stage_title_label)
 
+    var board_center := CenterContainer.new()
+    board_center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    root_v.add_child(board_center)
+
     var board := VBoxContainer.new()
-    board.size_flags_vertical = Control.SIZE_EXPAND_FILL
     board.alignment = BoxContainer.ALIGNMENT_CENTER
-    board.add_theme_constant_override("separation", 5)
-    root_v.add_child(board)
+    board.add_theme_constant_override("separation", 6)
+    board_center.add_child(board)
 
     for x in range(3):
-        var layer_row := HBoxContainer.new()
-        layer_row.alignment = BoxContainer.ALIGNMENT_CENTER
-        layer_row.add_theme_constant_override("separation", 9)
-        board.add_child(layer_row)
+        var layer_panel := PanelContainer.new()
+        layer_panel.add_theme_stylebox_override("panel", _panel_style(C_LAYER_BG, C_BORDER, 8, 1))
+        board.add_child(layer_panel)
+
+        var layer_margin := MarginContainer.new()
+        layer_margin.add_theme_constant_override("margin_left", 7)
+        layer_margin.add_theme_constant_override("margin_right", 7)
+        layer_margin.add_theme_constant_override("margin_top", 4)
+        layer_margin.add_theme_constant_override("margin_bottom", 7)
+        layer_panel.add_child(layer_margin)
+
+        var layer_v := VBoxContainer.new()
+        layer_v.add_theme_constant_override("separation", 3)
+        layer_margin.add_child(layer_v)
 
         var layer_label := Label.new()
-        layer_label.text = "X=%d" % (x + 1)
-        layer_label.custom_minimum_size = Vector2(38, 0)
-        layer_label.add_theme_font_size_override("font_size", 14)
-        layer_label.add_theme_color_override("font_color", Color("475467"))
-        layer_row.add_child(layer_label)
+        layer_label.text = "LAYER  X = %d" % (x + 1)
+        layer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        layer_label.add_theme_font_size_override("font_size", 11)
+        layer_label.add_theme_color_override("font_color", C_MUTED)
+        layer_v.add_child(layer_label)
 
         var grid := GridContainer.new()
         grid.columns = 3
         grid.add_theme_constant_override("h_separation", 4)
         grid.add_theme_constant_override("v_separation", 4)
-        layer_row.add_child(grid)
+        layer_v.add_child(grid)
 
         for local_i in range(9):
             var index := x * 9 + local_i
             var cell := Button.new()
-            cell.custom_minimum_size = Vector2(52, 43)
+            cell.custom_minimum_size = Vector2(52, 39)
             cell.focus_mode = Control.FOCUS_NONE
             cell.pressed.connect(_on_cell_pressed.bind(index))
             grid.add_child(cell)
             cell_buttons.append(cell)
 
     coord_label = Label.new()
-    coord_label.text = "セルを選択"
+    coord_label.text = "セルを選ぶと X / Y / Z の3断面をハイライト"
     coord_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    coord_label.add_theme_font_size_override("font_size", 13)
-    coord_label.add_theme_color_override("font_color", Color("667085"))
+    coord_label.add_theme_font_size_override("font_size", 12)
+    coord_label.add_theme_color_override("font_color", C_MUTED)
     root_v.add_child(coord_label)
+
+    var digits_center := CenterContainer.new()
+    root_v.add_child(digits_center)
 
     var digits_grid := GridContainer.new()
     digits_grid.columns = 5
     digits_grid.add_theme_constant_override("h_separation", 5)
     digits_grid.add_theme_constant_override("v_separation", 5)
-    root_v.add_child(digits_grid)
+    digits_center.add_child(digits_grid)
 
     for digit in DIGITS:
         var digit_button := Button.new()
         digit_button.text = str(digit)
-        digit_button.custom_minimum_size = Vector2(58, 42)
-        digit_button.add_theme_font_size_override("font_size", 18)
+        digit_button.custom_minimum_size = Vector2(58, 40)
+        digit_button.add_theme_font_size_override("font_size", 17)
         digit_button.pressed.connect(_input_digit.bind(digit))
+        _style_key_button(digit_button)
         digits_grid.add_child(digit_button)
 
     var erase := Button.new()
     erase.text = "⌫"
-    erase.custom_minimum_size = Vector2(58, 42)
+    erase.custom_minimum_size = Vector2(58, 40)
     erase.tooltip_text = "消す"
     erase.pressed.connect(_erase_selected)
+    _style_key_button(erase)
     digits_grid.add_child(erase)
 
     var controls := HBoxContainer.new()
@@ -152,28 +195,32 @@ func _build_ui() -> void:
     candidate_button = Button.new()
     candidate_button.text = "候補 OFF"
     candidate_button.toggle_mode = true
-    candidate_button.custom_minimum_size = Vector2(92, 40)
+    candidate_button.custom_minimum_size = Vector2(92, 38)
     candidate_button.toggled.connect(_on_candidate_toggled)
+    _style_secondary_button(candidate_button)
     controls.add_child(candidate_button)
 
     var undo := Button.new()
     undo.text = "Undo"
-    undo.custom_minimum_size = Vector2(68, 40)
+    undo.custom_minimum_size = Vector2(66, 38)
     undo.pressed.connect(_undo)
+    _style_secondary_button(undo)
     controls.add_child(undo)
 
     var check := Button.new()
     check.text = "Check"
-    check.custom_minimum_size = Vector2(78, 40)
+    check.custom_minimum_size = Vector2(66, 38)
+    check.tooltip_text = "途中確認。完成時は自動でCLEARになります。"
     check.pressed.connect(_check_board)
+    _style_tertiary_button(check)
     controls.add_child(check)
 
     status_label = Label.new()
-    status_label.custom_minimum_size = Vector2(0, 38)
+    status_label.custom_minimum_size = Vector2(0, 34)
     status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    status_label.add_theme_font_size_override("font_size", 13)
+    status_label.add_theme_font_size_override("font_size", 12)
     status_label.add_theme_color_override("font_color", Color("344054"))
     root_v.add_child(status_label)
 
@@ -194,7 +241,9 @@ func _load_stage(id: String) -> void:
     candidate_mode = false
     candidate_button.button_pressed = false
     candidate_button.text = "候補 OFF"
+    _style_secondary_button(candidate_button)
     stage_title_label.text = "Stage %s · %s" % [stage["id"], stage["title_ja"]]
+    coord_label.text = "セルを選ぶと X / Y / Z の3断面をハイライト"
     status_label.text = "3つのXレイヤーから始めよう。"
     for i in range(stage_picker.item_count):
         if String(stage_picker.get_item_metadata(i)) == id:
@@ -208,7 +257,8 @@ func _on_stage_selected(item_index: int) -> void:
 func _on_cell_pressed(index: int) -> void:
     selected_index = index
     var c := _coords(index)
-    coord_label.text = "X%d · Y%d · Z%d" % [c.x + 1, c.y + 1, c.z + 1]
+    coord_label.text = "X%d · Y%d · Z%d   ｜   同じ3断面を表示中" % [c.x + 1, c.y + 1, c.z + 1]
+    status_label.text = ""
     _refresh_cells()
 
 func _input_digit(digit: int) -> void:
@@ -245,6 +295,12 @@ func _erase_selected() -> void:
 func _on_candidate_toggled(enabled: bool) -> void:
     candidate_mode = enabled
     candidate_button.text = "候補 ON" if enabled else "候補 OFF"
+    if enabled:
+        _style_accent_button(candidate_button)
+        status_label.text = "候補メモ：数字をタップしてON/OFF"
+    else:
+        _style_secondary_button(candidate_button)
+        status_label.text = ""
 
 func _undo() -> void:
     if history.is_empty():
@@ -283,25 +339,49 @@ func _refresh_cells() -> void:
     for i in range(27):
         var button := cell_buttons[i]
         var value := int(values[i])
+
         if value != 0:
             button.text = str(value)
             button.add_theme_font_size_override("font_size", 19)
         elif not notes[i].is_empty():
             button.text = _notes_text(notes[i])
-            button.add_theme_font_size_override("font_size", 9)
+            button.add_theme_font_size_override("font_size", 8)
         else:
             button.text = ""
             button.add_theme_font_size_override("font_size", 19)
 
-        button.modulate = Color.WHITE
+        var bg := C_EMPTY
+        var border := C_BORDER
+        var text_color := C_MUTED
+        var border_width := 1
+
         if givens[i]:
-            button.modulate = Color("e9eef8")
+            bg = C_GIVEN
+            text_color = C_TEXT
+        elif value != 0:
+            bg = C_ENTRY
+            text_color = C_ACCENT
+        elif not notes[i].is_empty():
+            bg = C_EMPTY
+            text_color = C_ACCENT
+
         if selected_index >= 0 and i != selected_index and _same_plane(i, selected_index):
-            button.modulate = Color("dff7fb")
+            bg = C_ACCENT_SOFT
+            border = Color("a8dff2")
+
         if _cell_has_conflict(i):
-            button.modulate = Color("ffd7d7")
+            bg = C_CONFLICT
+            border = C_CONFLICT_BORDER
+            text_color = Color("9d2f2f")
+            border_width = 2
+
         if i == selected_index:
-            button.modulate = Color("91dbef")
+            bg = C_SELECTED
+            border = C_ACCENT
+            text_color = C_TEXT
+            border_width = 2
+
+        _apply_button_style(button, bg, border, text_color, border_width)
 
 func _notes_text(cell_notes: Array) -> String:
     var out := ""
@@ -371,6 +451,45 @@ func _coords(index: int) -> Vector3i:
     var y := rem / 3
     var z := rem % 3
     return Vector3i(x, y, z)
+
+func _panel_style(bg: Color, border: Color, radius: int, width: int) -> StyleBoxFlat:
+    var style := StyleBoxFlat.new()
+    style.bg_color = bg
+    style.border_color = border
+    style.border_width_left = width
+    style.border_width_top = width
+    style.border_width_right = width
+    style.border_width_bottom = width
+    style.corner_radius_top_left = radius
+    style.corner_radius_top_right = radius
+    style.corner_radius_bottom_left = radius
+    style.corner_radius_bottom_right = radius
+    return style
+
+func _apply_button_style(button: BaseButton, bg: Color, border: Color, text_color: Color, width: int = 1) -> void:
+    var normal := _panel_style(bg, border, 7, width)
+    var hover := _panel_style(bg.lightened(0.025), border, 7, width)
+    var pressed := _panel_style(bg.darkened(0.035), border, 7, width)
+    button.add_theme_stylebox_override("normal", normal)
+    button.add_theme_stylebox_override("hover", hover)
+    button.add_theme_stylebox_override("pressed", pressed)
+    button.add_theme_stylebox_override("focus", normal)
+    button.add_theme_color_override("font_color", text_color)
+    button.add_theme_color_override("font_hover_color", text_color)
+    button.add_theme_color_override("font_pressed_color", text_color)
+    button.add_theme_color_override("font_focus_color", text_color)
+
+func _style_key_button(button: BaseButton) -> void:
+    _apply_button_style(button, C_EMPTY, C_BORDER, C_TEXT, 1)
+
+func _style_secondary_button(button: BaseButton) -> void:
+    _apply_button_style(button, Color("eef1f5"), C_BORDER, Color("475467"), 1)
+
+func _style_tertiary_button(button: BaseButton) -> void:
+    _apply_button_style(button, C_BG, C_BORDER, C_MUTED, 1)
+
+func _style_accent_button(button: BaseButton) -> void:
+    _apply_button_style(button, C_ACCENT_SOFT, Color("8dd5ef"), Color("116b93"), 1)
 
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey:
