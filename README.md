@@ -45,20 +45,29 @@ If Stage 010 feels good, expand to the full 20-stage tutorial pack.
 
 ## UI principle
 
-**2D first, 3D only when it adds understanding.**
+**One 3D object, viewed through one 2D slice at a time.**
+
+The visual reboot replaces the old stacked-three-X-layer prototype.
 
 Normal play:
-- three 3×3 X-layer boards
-- digit keypad 1–9
-- candidate mode
-- undo
+- one large active 3×3 slice
+- X / Y / Z axis selector
+- slice navigation 1/3–3/3
+- small transparent 3×3×3 Cube Preview
+- digit keypad, candidate mode, undo
 - selected-cell X/Y/Z coordinates
 
-Cube Lens:
-- small 3D helper, not the main board
-- highlights the selected cell and its three planes
-- Digit Focus can isolate one digit's candidates across the cube
-- Stage 010 temporarily promotes the cube into the foreground for TRIAD MATCH
+Selection Lens:
+- the selected canonical cell glows in the cube
+- its three orthogonal X/Y/Z planes become visible
+- the UI explains spatial relationships through motion rather than text walls
+
+TRIAD MATCH:
+- Stage 010 promotes the cube into the main visual
+- Digit Focus isolates one digit's global candidates
+- a valid three-cell spatial pattern becomes the signature aha moment
+
+See `docs/VISUAL_IMPLEMENTATION_TASK_v0.1.md` for the current visual specification.
 
 ## Tech
 
